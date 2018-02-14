@@ -28,7 +28,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- *
  * @author samuelcampos
  */
 public class OSXStorageDeviceDetector extends AbstractStorageDeviceDetector {
@@ -64,12 +63,11 @@ public class OSXStorageDeviceDetector extends AbstractStorageDeviceDetector {
         final String[] versionParts = version.split("\\.");
 
         if (versionParts.length > 1) {
-        	try{
-        		macosVersion = Integer.parseInt(versionParts[1]);
-        	}
-        	catch (NumberFormatException nfe) {
-        		logger.error(nfe.getMessage(), nfe);
-        	}
+            try {
+                macosVersion = Integer.parseInt(versionParts[1]);
+            } catch (NumberFormatException nfe) {
+                logger.error(nfe.getMessage(), nfe);
+            }
         }
 
     }
@@ -79,76 +77,74 @@ public class OSXStorageDeviceDetector extends AbstractStorageDeviceDetector {
     public List<USBStorageDevice> getStorageDevicesDevices() {
         final ArrayList<USBStorageDevice> listDevices = new ArrayList<>();
 
-        if (macosVersion >= MACOSX_MOUNTAINLION){
-        	try (final CommandExecutor commandExecutor = new CommandExecutor(CMD_DF)) {
+        if (macosVersion >= MACOSX_MOUNTAINLION) {
+            try (final CommandExecutor commandExecutor = new CommandExecutor(CMD_DF)) {
 
-        		commandExecutor.processOutput((String outputLine) -> {
-					final String[] parts = outputLine.split("\\s");
-					final String device = parts[0];
+                commandExecutor.processOutput((String outputLine) -> {
+                    final String[] parts = outputLine.split("\\s");
+                    final String device = parts[0];
 
                     if (device.startsWith(DISK_PREFIX)) {
-                    	final DiskInfo disk = getDiskInfo(device);
+                        final DiskInfo disk = getDiskInfo(device);
 
-                    	if (disk.isUSB()) {
-                    		listDevices.add(new USBStorageDevice(new File(disk.getMountPoint()), disk.getName()));
-                    	}
+                        if (disk.isUSB()) {
+                            listDevices.add(new USBStorageDevice(new File(disk.getMountPoint()), disk.getName()));
+                        }
                     }
 
-        		});
+                });
+                commandExecutor.close();
 
-        	} catch (IOException e) {
-        		logger.error(e.getMessage(), e);
-        	}
-        }
-        else{
-        	try (final CommandExecutor commandExecutor = new CommandExecutor(CMD_SYSTEM_PROFILER_USB)) {
-        		commandExecutor.processOutput(outputLine -> {
-        			final Matcher matcher = macOSXPattern_MOUNT.matcher(outputLine);
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
+        } else {
+            try (final CommandExecutor commandExecutor = new CommandExecutor(CMD_SYSTEM_PROFILER_USB)) {
+                commandExecutor.processOutput(outputLine -> {
+                    final Matcher matcher = macOSXPattern_MOUNT.matcher(outputLine);
 
-        			if (matcher.matches()) {
-        				listDevices.add(getUSBDevice(matcher.group(1)));
-        			}
-        		});
+                    if (matcher.matches()) {
+                        listDevices.add(getUSBDevice(matcher.group(1)));
+                    }
+                });
 
-        	} catch (IOException e) {
-        		logger.error(e.getMessage(), e);
-        	}
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
         }
 
         return listDevices;
     }
 
 
-	private DiskInfo getDiskInfo(final String device) {
+    private DiskInfo getDiskInfo(final String device) {
 
-		final DiskInfo disk = new DiskInfo(device);
-		final String command = CMD_DISKUTIL +  disk.getDevice();
+        final DiskInfo disk = new DiskInfo(device);
+        final String command = CMD_DISKUTIL + disk.getDevice();
 
-		try (final CommandExecutor commandExecutor = new CommandExecutor(command)) {
+        try (final CommandExecutor commandExecutor = new CommandExecutor(command)) {
 
-    		commandExecutor.processOutput(outputLine -> {
+            commandExecutor.processOutput(outputLine -> {
 
-    			final String[] parts = outputLine.split(":");
+                final String[] parts = outputLine.split(":");
 
-    			if(parts.length > 1){
-    				if(INFO_MOUNTPOINT.equals(parts[0].trim())){
-    					disk.setMountPoint(parts[1].trim());
-    				}
-    				else if(INFO_PROTOCOL.equals(parts[0].trim())){
-    					disk.setUSB(INFO_USB.equals(parts[1].trim()));
-    				}
-    				else if(INFO_NAME.equals(parts[0].trim())){
-    					disk.setName(parts[1].trim());
-    				}
-    			}
+                if (parts.length > 1) {
+                    if (INFO_MOUNTPOINT.equals(parts[0].trim())) {
+                        disk.setMountPoint(parts[1].trim());
+                    } else if (INFO_PROTOCOL.equals(parts[0].trim())) {
+                        disk.setUSB(INFO_USB.equals(parts[1].trim()));
+                    } else if (INFO_NAME.equals(parts[0].trim())) {
+                        disk.setName(parts[1].trim());
+                    }
+                }
 
 
-    		});
+            });
 
-    	} catch (IOException e) {
-    		logger.error(e.getMessage(), e);
-    	}
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+        }
 
-		return disk;
-	}
+        return disk;
+    }
 }

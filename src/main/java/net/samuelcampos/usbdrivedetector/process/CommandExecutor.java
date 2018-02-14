@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
- *
  * @author samuelcampos
  */
 public class CommandExecutor implements Closeable {
@@ -37,20 +36,18 @@ public class CommandExecutor implements Closeable {
         if (logger.isTraceEnabled()) {
             logger.trace("Running command: " + command);
         }
-        
         process = Runtime.getRuntime().exec(command);
-
         input = new BufferedReader(new InputStreamReader(process.getInputStream()));
     }
 
-    public void processOutput(final Consumer<String> method) throws IOException{
+    public void processOutput(final Consumer<String> method) throws IOException {
         String outputLine;
         while ((outputLine = this.readOutputLine()) != null) {
             method.accept(outputLine);
         }
     }
 
-    public boolean checkOutput(final Predicate<String> method) throws IOException{
+    public boolean checkOutput(final Predicate<String> method) throws IOException {
         String outputLine;
         while ((outputLine = this.readOutputLine()) != null) {
             if (method.test(outputLine)) {
@@ -62,21 +59,28 @@ public class CommandExecutor implements Closeable {
     }
 
     private String readOutputLine() throws IOException {
-        if(input == null) {
+        if (input == null) {
             throw new IllegalStateException("You need to call 'executeCommand' method first");
         }
-        
-         final String outputLine = input.readLine();
-         
-         if(outputLine != null) {
-             return outputLine.trim();
-         }
-         
-         return null;
+
+        final String outputLine = input.readLine();
+
+        if (outputLine != null) {
+            return outputLine.trim();
+        }
+
+        return null;
     }
 
     @Override
     public void close() throws IOException {
+
+        try {
+            process.waitFor();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         if (input != null) {
             try {
                 input.close();

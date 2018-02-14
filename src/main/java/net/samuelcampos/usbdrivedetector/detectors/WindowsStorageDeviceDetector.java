@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author samuelcampos
  */
 public class WindowsStorageDeviceDetector extends AbstractStorageDeviceDetector {
@@ -54,7 +53,7 @@ public class WindowsStorageDeviceDetector extends AbstractStorageDeviceDetector 
                     listDevices.add(getUSBDevice(rootPath, getDeviceName(rootPath)));
                 }
             });
-
+            commandExecutor.close();
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
